@@ -83,13 +83,13 @@ public class AirQualityMonitorApp extends Application {
 
             MainView mainView = new MainView(aggregationService, serialService, networkService, mockService);
 
-            Scene scene = new Scene(mainView, 1280, 820);
+            Scene scene = new Scene(mainView, 1280, 1100);
             scene.getStylesheets().add("data:text/css,.root{font-family:'Arial';}");
 
             primaryStage.setTitle("室内空气质量监测系统");
             primaryStage.setScene(scene);
             primaryStage.setMinWidth(1100);
-            primaryStage.setMinHeight(720);
+            primaryStage.setMinHeight(900);
 
             primaryStage.setOnCloseRequest(e -> {
                 try {

@@ -82,6 +82,56 @@ public class SensorDataDao {
         return 0.0;
     }
 
+    public List<TimePoint> findHourlyAverages(int hours) throws SQLException {
+        List<TimePoint> list = new ArrayList<>();
+        String sql = "SELECT " +
+                "FLOOR(HOUR(timestamp) * 4 + MINUTE(timestamp) / 15) AS time_slot, " +
+                "MIN(timestamp) AS slot_start, " +
+                "AVG(formaldehyde) AS avg_formaldehyde, " +
+                "AVG(pm25) AS avg_pm25 " +
+                "FROM sensor_data " +
+                "WHERE timestamp > ? " +
+                "GROUP BY time_slot " +
+                "ORDER BY slot_start ASC";
+        LocalDateTime since = LocalDateTime.now().minusHours(hours);
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setTimestamp(1, Timestamp.valueOf(since));
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Timestamp ts = rs.getTimestamp("slot_start");
+                    double formaldehyde = rs.getDouble("avg_formaldehyde");
+                    double pm25 = rs.getDouble("avg_pm25");
+                    if (ts != null) {
+                        list.add(new TimePoint(ts.toLocalDateTime(), formaldehyde, pm25));
+                    }
+                }
+            }
+        }
+        return list;
+    }
+
+    public static class TimePoint {
+        public final LocalDateTime time;
+        public final double formaldehyde;
+        public final double pm25;
+
+        public TimePoint(LocalDateTime time, double formaldehyde, double pm25) {
+            this.time = time;
+            this.formaldehyde = formaldehyde;
+            this.pm25 = pm25;
+        }
+
+        @Override
+        public String toString() {
+            return "TimePoint{" +
+                    "time=" + time +
+                    ", formaldehyde=" + formaldehyde +
+                    ", pm25=" + pm25 +
+                    '}';
+        }
+    }
+
     private SensorData mapRow(ResultSet rs) throws SQLException {
         SensorData data = new SensorData();
         data.setId(rs.getLong("id"));

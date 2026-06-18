@@ -29,6 +29,7 @@ public class MainView extends BorderPane {
 
     private Gauge formaldehydeGauge;
     private Gauge pm25Gauge;
+    private TrendChartPanel trendChartPanel;
 
     private Label statusLabel;
     private Label sensorCountLabel;
@@ -66,8 +67,12 @@ public class MainView extends BorderPane {
         VBox rightPanel = createRightPanel();
         setRight(rightPanel);
 
-        HBox bottomPanel = createBottomPanel();
-        setBottom(bottomPanel);
+        trendChartPanel = new TrendChartPanel();
+
+        HBox controlPanel = createBottomPanel();
+        VBox bottomContainer = new VBox(0, controlPanel, trendChartPanel);
+        VBox.setVgrow(trendChartPanel, Priority.ALWAYS);
+        setBottom(bottomContainer);
     }
 
     private VBox createTopPanel() {
@@ -223,9 +228,25 @@ public class MainView extends BorderPane {
     }
 
     private void setupRefreshTimer() {
-        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> refreshSensorList()));
-        timeline.setCycleCount(Timeline.INDEFINITE);
-        timeline.play();
+        Timeline sensorTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> refreshSensorList()));
+        sensorTimeline.setCycleCount(Timeline.INDEFINITE);
+        sensorTimeline.play();
+
+        Timeline trendTimeline = new Timeline(new KeyFrame(Duration.seconds(30), e -> refreshTrendChart()));
+        trendTimeline.setCycleCount(Timeline.INDEFINITE);
+        trendTimeline.play();
+
+        Platform.runLater(this::refreshTrendChart);
+    }
+
+    private void refreshTrendChart() {
+        try {
+            if (trendChartPanel != null) {
+                trendChartPanel.refreshData();
+            }
+        } catch (Exception e) {
+            System.err.println("刷新趋势图异常: " + e.getMessage());
+        }
     }
 
     private void refreshSensorList() {
