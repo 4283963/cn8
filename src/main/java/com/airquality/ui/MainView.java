@@ -229,17 +229,21 @@ public class MainView extends BorderPane {
     }
 
     private void refreshSensorList() {
-        var allData = aggregationService.getLatestSensorData();
-        for (Map.Entry<String, SensorData> entry : allData.entrySet()) {
-            SensorItemPanel itemPanel = sensorPanels.get(entry.getKey());
-            if (itemPanel == null) {
-                itemPanel = new SensorItemPanel();
-                sensorPanels.put(entry.getKey(), itemPanel);
-                sensorListContainer.getChildren().add(itemPanel);
+        try {
+            var allData = aggregationService.getLatestSensorData();
+            for (Map.Entry<String, SensorData> entry : allData.entrySet()) {
+                SensorItemPanel itemPanel = sensorPanels.get(entry.getKey());
+                if (itemPanel == null) {
+                    itemPanel = new SensorItemPanel();
+                    sensorPanels.put(entry.getKey(), itemPanel);
+                    sensorListContainer.getChildren().add(itemPanel);
+                }
+                itemPanel.updateData(entry.getValue());
             }
-            itemPanel.updateData(entry.getValue());
+            sensorCountLabel.setText("在线传感器: " + aggregationService.getActiveSensorCount());
+        } catch (Exception e) {
+            System.err.println("刷新传感器列表异常: " + e.getMessage());
         }
-        sensorCountLabel.setText("在线传感器: " + aggregationService.getActiveSensorCount());
     }
 
     private void refreshSerialPorts() {

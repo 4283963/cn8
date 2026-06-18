@@ -36,29 +36,37 @@ public class MockSensorService {
     }
 
     private void generateData() {
-        for (int i = 0; i < sensorIds.length; i++) {
-            double formaldehyde = 0.02 + random.nextDouble() * 0.15;
-            double pm25 = 10 + random.nextDouble() * 60;
+        try {
+            for (int i = 0; i < sensorIds.length; i++) {
+                double formaldehyde = 0.02 + random.nextDouble() * 0.15;
+                double pm25 = 10 + random.nextDouble() * 60;
 
-            if (random.nextInt(100) < 5) {
-                formaldehyde = 0.12 + random.nextDouble() * 0.1;
-                pm25 = 40 + random.nextDouble() * 50;
+                if (random.nextInt(100) < 5) {
+                    formaldehyde = 0.12 + random.nextDouble() * 0.1;
+                    pm25 = 40 + random.nextDouble() * 50;
+                }
+
+                SensorData data = new SensorData(
+                        sensorIds[i],
+                        locations[i],
+                        Math.round(formaldehyde * 1000.0) / 1000.0,
+                        Math.round(pm25 * 10.0) / 10.0,
+                        LocalDateTime.now()
+                );
+                notifyListeners(data);
             }
-
-            SensorData data = new SensorData(
-                    sensorIds[i],
-                    locations[i],
-                    Math.round(formaldehyde * 1000.0) / 1000.0,
-                    Math.round(pm25 * 10.0) / 10.0,
-                    LocalDateTime.now()
-            );
-            notifyListeners(data);
+        } catch (Exception e) {
+            System.err.println("生成模拟数据异常: " + e.getMessage());
         }
     }
 
     private void notifyListeners(SensorData data) {
         for (SensorDataListener listener : listeners) {
-            listener.onSensorDataReceived(data);
+            try {
+                listener.onSensorDataReceived(data);
+            } catch (Exception e) {
+                System.err.println("监听器处理模拟数据异常: " + e.getMessage());
+            }
         }
     }
 

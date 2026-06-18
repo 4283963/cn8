@@ -122,11 +122,17 @@ public class NetworkSensorService {
                 double pm25 = Double.parseDouble(parts[3].trim());
                 SensorData sensorData = new SensorData(sensorId, location, formaldehyde, pm25, LocalDateTime.now());
                 for (SensorDataListener listener : listeners) {
-                    listener.onSensorDataReceived(sensorData);
+                    try {
+                        listener.onSensorDataReceived(sensorData);
+                    } catch (Exception e) {
+                        System.err.println("监听器处理网络数据异常: " + e.getMessage());
+                    }
                 }
             }
         } catch (NumberFormatException e) {
             System.err.println("解析网络数据失败: " + data);
+        } catch (Exception e) {
+            System.err.println("处理网络数据异常: " + e.getMessage());
         }
     }
 

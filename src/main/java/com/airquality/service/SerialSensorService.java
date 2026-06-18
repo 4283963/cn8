@@ -104,7 +104,11 @@ public class SerialSensorService {
 
     private void notifyListeners(SensorData data) {
         for (SensorDataListener listener : listeners) {
-            listener.onSensorDataReceived(data);
+            try {
+                listener.onSensorDataReceived(data);
+            } catch (Exception e) {
+                System.err.println("监听器处理串口数据异常: " + e.getMessage());
+            }
         }
     }
 

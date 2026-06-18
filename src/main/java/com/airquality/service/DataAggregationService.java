@@ -27,15 +27,21 @@ public class DataAggregationService implements SensorDataListener {
             sensorDataDao.insert(data);
         } catch (SQLException e) {
             System.err.println("保存传感器数据失败: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("保存传感器数据发生未知错误: " + e.getMessage());
         }
 
-        latestSensorData.put(data.getSensorId(), data);
-        recalculateAverages();
+        try {
+            latestSensorData.put(data.getSensorId(), data);
+            recalculateAverages();
+        } catch (Exception e) {
+            System.err.println("处理传感器数据异常: " + e.getMessage());
+        }
     }
 
     private void recalculateAverages() {
         if (latestSensorData.isEmpty()) {
-            Platform.runLater(() -> {
+            runSafeOnFxThread(() -> {
                 avgFormaldehyde.set(0.0);
                 avgPm25.set(0.0);
             });
@@ -46,22 +52,41 @@ public class DataAggregationService implements SensorDataListener {
         double totalPm25 = 0;
         int count = 0;
 
-        LocalDateTime threshold = LocalDateTime.now().minusMinutes(5);
-        for (SensorData data : latestSensorData.values()) {
-            if (data.getTimestamp().isAfter(threshold)) {
-                totalFormaldehyde += data.getFormaldehyde();
-                totalPm25 += data.getPm25();
-                count++;
+        try {
+            LocalDateTime threshold = LocalDateTime.now().minusMinutes(5);
+            for (SensorData data : latestSensorData.values()) {
+                if (data.getTimestamp().isAfter(threshold)) {
+                    totalFormaldehyde += data.getFormaldehyde();
+                    totalPm25 += data.getPm25();
+                    count++;
+                }
             }
+        } catch (Exception e) {
+            System.err.println("计算平均值异常: " + e.getMessage());
+            return;
         }
 
         if (count > 0) {
-            double avgF = totalFormaldehyde / count;
-            double avgP = totalPm25 / count;
-            Platform.runLater(() -> {
+            final double avgF = totalFormaldehyde / count;
+            final double avgP = totalPm25 / count;
+            runSafeOnFxThread(() -> {
                 avgFormaldehyde.set(Math.round(avgF * 1000.0) / 1000.0);
                 avgPm25.set(Math.round(avgP * 10.0) / 10.0);
             });
+        }
+    }
+
+    private void runSafeOnFxThread(Runnable action) {
+        try {
+            Platform.runLater(() -> {
+                try {
+                    action.run();
+                } catch (Exception e) {
+                    System.err.println("UI 更新异常: " + e.getMessage());
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("调度 UI 更新失败: " + e.getMessage());
         }
     }
 
